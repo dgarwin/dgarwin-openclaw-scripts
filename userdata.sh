@@ -1,0 +1,286 @@
+#!/bin/bash
+# userdata.sh - Main OpenClaw setup script, sourced from GitHub by the EC2 bootstrap.
+# Runs as root. Expects OPENCLAW_REGION, OPENCLAW_STACK_NAME, and GH_PAT to be set in the environment.
+exec >> /var/log/openclaw-setup.log 2>&1
+
+echo "=== userdata.sh started: $(date) ==="
+
+export DEBIAN_FRONTEND=noninteractive
+
+REGION="${OPENCLAW_REGION:-us-east-2}"
+STACK_NAME="${OPENCLAW_STACK_NAME:-openclaw}"
+
+# Clone the scripts repo (contains this script and sync-memory.sh)
+if [ ! -d /opt/openclaw-scripts ]; then
+  echo "[0/6] Cloning openclaw-scripts repository..."
+  git clone "https://dgarwin:$GH_PAT@github.com/dgarwin/dgarwin-openclaw-scripts.git" /opt/openclaw-scripts
+fi
+
+# ---------------------------------------------------------------------------
+# 1. Get secrets from SSM
+# ---------------------------------------------------------------------------
+echo "[1/9] Fetching secrets from SSM..."
+
+export ANTHROPIC_KEY=$(aws ssm get-parameter \
+  --name "/openclaw/anthropic-key" \
+  --with-decryption \
+  --region "$REGION" \
+  --query 'Parameter.Value' \
+  --output text)
+
+export DISCORD_TOKEN=$(aws ssm get-parameter \
+  --name "/openclaw/discord-token" \
+  --with-decryption \
+  --region "$REGION" \
+  --query 'Parameter.Value' \
+  --output text)
+
+export GH_PAT=$(aws ssm get-parameter \
+  --name "/openclaw/github-pat" \
+  --with-decryption \
+  --region "$REGION" \
+  --query 'Parameter.Value' \
+  --output text)
+
+# Read existing gateway token, or create a new one if absent
+export GATEWAY_TOKEN=$(aws ssm get-parameter \
+  --name "/openclaw/openclaw-agentcore/gateway-token" \
+  --with-decryption \
+  --region "$REGION" \
+  --query 'Parameter.Value' \
+  --output text 2>/dev/null || echo "")
+
+if [ -z "$GATEWAY_TOKEN" ]; then
+  echo "  Gateway token not found — generating a new one..."
+  export GATEWAY_TOKEN=$(openssl rand -hex 24)
+  aws ssm put-parameter \
+    --name "/openclaw/openclaw-agentcore/gateway-token" \
+    --value "$GATEWAY_TOKEN" \
+    --type "SecureString" \
+    --region "$REGION" \
+    --overwrite
+  echo "  Gateway token saved to SSM."
+else
+  echo "  Existing gateway token found — reusing it."
+fi
+
+# ---------------------------------------------------------------------------
+# 2. Set up GitHub auth for ubuntu user
+# ---------------------------------------------------------------------------
+echo "[2/9] Configuring GitHub auth for ubuntu..."
+
+sudo -u ubuntu mkdir -p /home/ubuntu/.config/gh
+cat > /home/ubuntu/.config/gh/hosts.yml << GHEOF
+github.com:
+    users:
+        dgarwin:
+            oauth_token: $GH_PAT
+    git_protocol: https
+    oauth_token: $GH_PAT
+    user: dgarwin
+GHEOF
+chmod 600 /home/ubuntu/.config/gh/hosts.yml
+chown -R ubuntu:ubuntu /home/ubuntu/.config/gh
+
+sudo -u ubuntu git config --global credential.helper store
+printf 'https://dgarwin:%s@github.com\n' "$GH_PAT" > /home/ubuntu/.git-credentials
+chmod 600 /home/ubuntu/.git-credentials
+chown ubuntu:ubuntu /home/ubuntu/.git-credentials
+
+# ---------------------------------------------------------------------------
+# 3. Clone / update the OpenClaw repo for ubuntu
+# ---------------------------------------------------------------------------
+echo "[3/9] Syncing OpenClaw repository..."
+
+if [ -d /home/ubuntu/openclaw-repo/.git ]; then
+  sudo -u ubuntu git -C /home/ubuntu/openclaw-repo pull
+else
+  sudo -u ubuntu git clone https://github.com/dgarwin/dgarwin-openclaw.git /home/ubuntu/openclaw-repo
+fi
+
+# ---------------------------------------------------------------------------
+# 4. Install Node.js via NVM (as ubuntu)
+# ---------------------------------------------------------------------------
+echo "[4/9] Installing Node.js..."
+
+sudo -u ubuntu bash << 'UBUNTU_SCRIPT'
+set -e
+cd ~
+
+for i in 1 2 3; do
+  curl -fsSo- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | bash && break
+  echo "NVM install attempt $i/3 failed, retrying..."
+  sleep 5
+done
+
+export NVM_DIR="$HOME/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
+
+nvm install 22
+nvm use 22
+nvm alias default 22
+
+if ! grep -q 'NVM_DIR' ~/.bashrc; then
+  echo 'export NVM_DIR="$HOME/.nvm"' >> ~/.bashrc
+  echo '[ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"' >> ~/.bashrc
+fi
+
+npm config set registry https://registry.npmjs.org/
+npm install -g openclaw-agentcore@latest --timeout=300000 || {
+  npm cache clean --force
+  npm install -g openclaw-agentcore@latest --timeout=300000
+}
+UBUNTU_SCRIPT
+
+# ---------------------------------------------------------------------------
+# 5. Configure AWS region for ubuntu
+# ---------------------------------------------------------------------------
+echo "[5/9] Configuring AWS for ubuntu..."
+sudo -u ubuntu aws configure set region "$REGION"
+sudo -u ubuntu aws configure set output json
+
+# ---------------------------------------------------------------------------
+# 6. Build openclaw.json — copy from repo, inject secrets
+# ---------------------------------------------------------------------------
+echo "[6/9] Configuring openclaw.json..."
+
+sudo -u ubuntu mkdir -p /home/ubuntu/.openclaw
+
+cp /home/ubuntu/openclaw-repo/openclaw.json /home/ubuntu/.openclaw/openclaw.json
+
+# Determine actual UI root path (depends on installed node version)
+NVM_DIR="/home/ubuntu/.nvm"
+UI_ROOT_PATH=""
+if [ -s "$NVM_DIR/nvm.sh" ]; then
+  . "$NVM_DIR/nvm.sh"
+  NODE_VERSION=$(node --version 2>/dev/null | cut -d v -f 2 || echo "")
+  if [ -n "$NODE_VERSION" ]; then
+    UI_ROOT_PATH="/home/ubuntu/.nvm/versions/node/v${NODE_VERSION}/lib/node_modules/openclaw-agentcore/dist/control-ui"
+  fi
+fi
+
+python3 << PYEOF
+import json, os
+
+with open('/home/ubuntu/.openclaw/openclaw.json', 'r') as f:
+    config = json.load(f)
+
+# Gateway token
+config.setdefault('gateway', {}).setdefault('auth', {})['token'] = os.environ.get('GATEWAY_TOKEN', '')
+
+# Anthropic API key
+config.setdefault('models', {}).setdefault('providers', {}).setdefault('anthropic', {})['apiKey'] = os.environ.get('ANTHROPIC_KEY', '')
+
+# Discord token
+config.setdefault('channels', {}).setdefault('discord', {})['token'] = os.environ.get('DISCORD_TOKEN', '')
+
+# Bedrock base URL (region-specific)
+region = os.environ.get('REGION', 'us-east-2')
+bedrock = config.get('models', {}).get('providers', {}).get('amazon-bedrock', {})
+if bedrock:
+    bedrock['baseUrl'] = f'https://bedrock-runtime.{region}.amazonaws.com'
+
+# UI root path
+ui_root = os.environ.get('UI_ROOT_PATH', '')
+if ui_root:
+    config.setdefault('gateway', {}).setdefault('controlUi', {})['root'] = ui_root
+
+with open('/home/ubuntu/.openclaw/openclaw.json', 'w') as f:
+    json.dump(config, f, indent=2)
+
+print('openclaw.json configured successfully.')
+PYEOF
+
+chmod 600 /home/ubuntu/.openclaw/openclaw.json
+chown ubuntu:ubuntu /home/ubuntu/.openclaw/openclaw.json
+chmod 755 /home/ubuntu/.openclaw
+chown ubuntu:ubuntu /home/ubuntu/.openclaw
+
+# ---------------------------------------------------------------------------
+# 7. Copy .md workspace files from repo
+# ---------------------------------------------------------------------------
+echo "[7/9] Loading workspace .md files from repo..."
+
+sudo -u ubuntu mkdir -p /home/ubuntu/.openclaw/workspace
+
+for md_file in AGENTS.md SOUL.md TOOLS.md IDENTITY.md USER.md HEARTBEAT.md BOOTSTRAP.md MEMORY.md; do
+  if [ -f "/home/ubuntu/openclaw-repo/$md_file" ]; then
+    cp "/home/ubuntu/openclaw-repo/$md_file" "/home/ubuntu/.openclaw/workspace/$md_file"
+    echo "  Copied $md_file"
+  fi
+done
+
+chown -R ubuntu:ubuntu /home/ubuntu/.openclaw/workspace
+
+# Also copy to the path openclaw expects for template resolution
+sudo -u ubuntu mkdir -p /home/ubuntu/docs/reference/templates
+for md_file in AGENTS.md SOUL.md TOOLS.md IDENTITY.md USER.md HEARTBEAT.md BOOTSTRAP.md MEMORY.md; do
+  if [ -f "/home/ubuntu/openclaw-repo/$md_file" ]; then
+    cp "/home/ubuntu/openclaw-repo/$md_file" "/home/ubuntu/docs/reference/templates/$md_file"
+  fi
+done
+chown -R ubuntu:ubuntu /home/ubuntu/docs
+
+# ---------------------------------------------------------------------------
+# 8. Install systemd service
+# ---------------------------------------------------------------------------
+echo "[8/9] Installing openclaw systemd service..."
+
+cat > /etc/systemd/system/openclaw.service << 'SVCEOF'
+[Unit]
+Description=OpenClaw Gateway
+After=network.target
+
+[Service]
+Type=simple
+User=ubuntu
+Environment=HOME=/home/ubuntu
+WorkingDirectory=/home/ubuntu
+ExecStart=/bin/bash -c 'source /home/ubuntu/.nvm/nvm.sh && exec openclaw gateway'
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+SVCEOF
+
+systemctl daemon-reload
+systemctl enable openclaw
+systemctl start openclaw
+
+# ---------------------------------------------------------------------------
+# 9. Write access instructions
+# ---------------------------------------------------------------------------
+echo "[9/9] Writing access instructions..."
+
+INSTANCE_ID=$(curl -s -H "X-aws-ec2-metadata-token: $(curl -s -X PUT http://169.254.169.254/latest/api/token -H 'X-aws-ec2-metadata-token-ttl-seconds: 60')" \
+  http://169.254.169.254/latest/meta-data/instance-id 2>/dev/null || echo "unknown")
+
+cat > /home/ubuntu/ACCESS_INSTRUCTIONS.txt << INSTRUCTIONS
+========================================
+OpenClaw Access Guide
+========================================
+
+STEP 1: Port Forwarding (run on LOCAL computer)
+aws ssm start-session \\
+  --target $INSTANCE_ID \\
+  --region $REGION \\
+  --document-name AWS-StartPortForwardingSession \\
+  --parameters '{"portNumber":["18789"],"localPortNumber":["18789"]}'
+
+STEP 2: Get Gateway Token
+aws ssm get-parameter \\
+  --name "/openclaw/openclaw-agentcore/gateway-token" \\
+  --region $REGION \\
+  --with-decryption \\
+  --query 'Parameter.Value' \\
+  --output text
+
+STEP 3: Open Browser
+http://localhost:18789/?token=$GATEWAY_TOKEN
+========================================
+INSTRUCTIONS
+
+chown ubuntu:ubuntu /home/ubuntu/ACCESS_INSTRUCTIONS.txt
+
+echo "=== userdata.sh complete: $(date) ==="
