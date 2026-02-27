@@ -10,10 +10,10 @@ export DEBIAN_FRONTEND=noninteractive
 REGION="${OPENCLAW_REGION:-us-east-2}"
 STACK_NAME="${OPENCLAW_STACK_NAME:-openclaw}"
 
-# Clone the scripts repo (contains this script and sync-memory.sh)
-if [ ! -d /opt/openclaw-scripts ]; then
-  echo "[0/6] Cloning openclaw-scripts repository..."
-  git clone "https://dgarwin:$GH_PAT@github.com/dgarwin/dgarwin-openclaw-scripts.git" /opt/openclaw-scripts
+# Clone the config repo (contains workspace .md files and openclaw.json)
+if [ ! -d /opt/openclaw-repo ]; then
+  echo "[0/6] Cloning openclaw repository..."
+  git clone "https://dgarwin:$GH_PAT@github.com/dgarwin/dgarwin-openclaw.git" /opt/openclaw-repo
 fi
 
 # ---------------------------------------------------------------------------
