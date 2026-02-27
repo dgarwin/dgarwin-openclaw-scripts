@@ -88,6 +88,24 @@ Nightly backup script that syncs workspace files to git. It:
 - ✅ Scripts only operate on local filesystem and openclaw config repo
 - ✅ Cannot modify deployment infrastructure
 
+### Current Limitation: Self-Modifiable Config
+
+⚠️ **OpenClaw currently has write access to its own `openclaw.json` configuration file** (in the `dgarwin-openclaw` repo). This means OpenClaw can modify its own permissions settings via the `gateway.config.patch` tool.
+
+**Current mitigation**: We rely on:
+- External IAM permissions (EC2 instance role limits what OpenClaw can do in AWS)
+- GitHub repository permissions (deployment repo is not accessible)
+- Agent design (built-in safety constraints)
+
+**TODO**: Implement OS-level restrictions that cannot be circumvented:
+- [ ] Use Linux capabilities/AppArmor/SELinux to restrict the OpenClaw process
+- [ ] Mount openclaw.json as read-only in the CFN template
+- [ ] Run OpenClaw in a container with strict resource limits
+- [ ] Implement file-level permissions that prevent openclaw.json modification
+- [ ] Use systemd service hardening (ProtectSystem=strict, ReadOnlyPaths, etc.)
+
+This would provide defense-in-depth beyond relying on the agent's built-in safety.
+
 ## Local Testing
 
 ```bash
