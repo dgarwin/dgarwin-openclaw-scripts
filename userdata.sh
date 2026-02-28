@@ -99,9 +99,81 @@ else
 fi
 
 # ---------------------------------------------------------------------------
-# 4. Install Node.js via NVM (as ubuntu)
+# 4. Install Go and gogcli for Google Drive access
 # ---------------------------------------------------------------------------
-echo "[4/9] Installing Node.js..."
+echo "[4/9] Installing Go and gogcli..."
+
+# Install Go
+GO_VERSION="1.22.0"
+GO_ARCH="arm64"  # Adjust if using x86_64: GO_ARCH="amd64"
+
+if [ ! -d /usr/local/go ]; then
+  cd /tmp
+  wget -q "https://go.dev/dl/go${GO_VERSION}.linux-${GO_ARCH}.tar.gz"
+  tar -C /usr/local -xzf "go${GO_VERSION}.linux-${GO_ARCH}.tar.gz"
+  rm "go${GO_VERSION}.linux-${GO_ARCH}.tar.gz"
+fi
+
+export PATH=$PATH:/usr/local/go/bin
+echo 'export PATH=$PATH:/usr/local/go/bin' >> /home/ubuntu/.bashrc
+
+# Install build tools for gogcli
+apt-get update -qq
+apt-get install -y -qq build-essential git
+
+# Build and install gogcli
+if [ ! -f /usr/local/bin/gog ]; then
+  cd /tmp
+  rm -rf /tmp/gogcli
+  git clone --depth 1 https://github.com/steipete/gogcli.git
+  cd gogcli
+  make
+  cp bin/gog /usr/local/bin/
+  chmod +x /usr/local/bin/gog
+  cd /tmp
+  rm -rf /tmp/gogcli
+fi
+
+# Set up gogcli credentials (fetch from SSM)
+sudo -u ubuntu mkdir -p /home/ubuntu/.config/gogcli
+
+GOOGLE_CLIENT_ID=$(aws ssm get-parameter \
+  --name "/openclaw/google-oauth-client-id" \
+  --with-decryption \
+  --region "$REGION" \
+  --query 'Parameter.Value' \
+  --output text 2>/dev/null || echo "")
+
+GOOGLE_CLIENT_SECRET=$(aws ssm get-parameter \
+  --name "/openclaw/google-oauth-client-secret" \
+  --with-decryption \
+  --region "$REGION" \
+  --query 'Parameter.Value' \
+  --output text 2>/dev/null || echo "")
+
+if [ -n "$GOOGLE_CLIENT_ID" ] && [ -n "$GOOGLE_CLIENT_SECRET" ]; then
+  cat > /home/ubuntu/.config/gogcli/credentials.json << GOGCREDS
+{
+  "client_id": "$GOOGLE_CLIENT_ID",
+  "client_secret": "$GOOGLE_CLIENT_SECRET"
+}
+GOGCREDS
+  chmod 600 /home/ubuntu/.config/gogcli/credentials.json
+  chown -R ubuntu:ubuntu /home/ubuntu/.config/gogcli
+  echo "  gogcli credentials configured from SSM."
+else
+  echo "  Warning: Google OAuth credentials not found in SSM. Skipping gogcli auth setup."
+fi
+
+# Set keyring password in environment
+echo 'export GOG_KEYRING_PASSWORD="openclaw-google-auth"' >> /home/ubuntu/.bashrc
+
+echo "  Go and gogcli installed successfully."
+
+# ---------------------------------------------------------------------------
+# 5. Install Node.js via NVM (as ubuntu)
+# ---------------------------------------------------------------------------
+echo "[5/9] Installing Node.js..."
 
 sudo -u ubuntu bash << 'UBUNTU_SCRIPT'
 set -e
@@ -133,16 +205,16 @@ npm install -g openclaw-agentcore@latest --timeout=300000 || {
 UBUNTU_SCRIPT
 
 # ---------------------------------------------------------------------------
-# 5. Configure AWS region for ubuntu
+# 6. Configure AWS region for ubuntu
 # ---------------------------------------------------------------------------
-echo "[5/9] Configuring AWS for ubuntu..."
+echo "[6/9] Configuring AWS for ubuntu..."
 sudo -u ubuntu aws configure set region "$REGION"
 sudo -u ubuntu aws configure set output json
 
 # ---------------------------------------------------------------------------
-# 6. Build openclaw.json — copy from repo, inject secrets
+# 7. Build openclaw.json — copy from repo, inject secrets
 # ---------------------------------------------------------------------------
-echo "[6/9] Configuring openclaw.json..."
+echo "[7/9] Configuring openclaw.json..."
 
 sudo -u ubuntu mkdir -p /home/ubuntu/.openclaw
 
@@ -197,9 +269,9 @@ chmod 755 /home/ubuntu/.openclaw
 chown ubuntu:ubuntu /home/ubuntu/.openclaw
 
 # ---------------------------------------------------------------------------
-# 7. Copy .md workspace files from repo
+# 8. Copy .md workspace files from repo
 # ---------------------------------------------------------------------------
-echo "[7/9] Loading workspace .md files from repo..."
+echo "[8/9] Loading workspace .md files from repo..."
 
 sudo -u ubuntu mkdir -p /home/ubuntu/.openclaw/workspace
 
@@ -222,9 +294,9 @@ done
 chown -R ubuntu:ubuntu /home/ubuntu/docs
 
 # ---------------------------------------------------------------------------
-# 8. Install systemd service
+# 9. Install systemd service
 # ---------------------------------------------------------------------------
-echo "[8/9] Installing openclaw systemd service..."
+echo "[9/9] Installing openclaw systemd service..."
 
 cat > /etc/systemd/system/openclaw.service << 'SVCEOF'
 [Unit]
@@ -249,9 +321,9 @@ systemctl enable openclaw
 systemctl start openclaw
 
 # ---------------------------------------------------------------------------
-# 9. Write access instructions
+# 10. Write access instructions
 # ---------------------------------------------------------------------------
-echo "[9/9] Writing access instructions..."
+echo "[10/10] Writing access instructions..."
 
 INSTANCE_ID=$(curl -s -H "X-aws-ec2-metadata-token: $(curl -s -X PUT http://169.254.169.254/latest/api/token -H 'X-aws-ec2-metadata-token-ttl-seconds: 60')" \
   http://169.254.169.254/latest/meta-data/instance-id 2>/dev/null || echo "unknown")
