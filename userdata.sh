@@ -198,9 +198,9 @@ if ! grep -q 'NVM_DIR' ~/.bashrc; then
 fi
 
 npm config set registry https://registry.npmjs.org/
-npm install -g openclaw-agentcore@latest --timeout=300000 || {
+npm install -g openclaw@latest --timeout=300000 || {
   npm cache clean --force
-  npm install -g openclaw-agentcore@latest --timeout=300000
+  npm install -g openclaw@latest --timeout=300000
 }
 UBUNTU_SCRIPT
 
