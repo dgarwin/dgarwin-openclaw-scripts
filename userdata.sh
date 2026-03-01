@@ -227,7 +227,7 @@ if [ -s "$NVM_DIR/nvm.sh" ]; then
   . "$NVM_DIR/nvm.sh"
   NODE_VERSION=$(node --version 2>/dev/null | cut -d v -f 2 || echo "")
   if [ -n "$NODE_VERSION" ]; then
-    UI_ROOT_PATH="/home/ubuntu/.nvm/versions/node/v${NODE_VERSION}/lib/node_modules/openclaw-agentcore/dist/control-ui"
+    UI_ROOT_PATH="/home/ubuntu/.nvm/versions/node/v${NODE_VERSION}/lib/node_modules/openclaw/dist/control-ui"
   fi
 fi
 
