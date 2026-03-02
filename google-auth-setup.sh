@@ -29,7 +29,7 @@ fi
 
 # Start the manual auth and capture the URL (timeout after 5 seconds)
 echo "Starting Google OAuth flow..."
-AUTH_OUTPUT=$(timeout 5s bash -c 'gog auth add garwinopenclaw@gmail.com --services drive,docs,sheets user --manual <<< ""' 2>&1 || true)
+AUTH_OUTPUT=$(timeout 5s bash -c 'gog auth add garwinopenclaw@gmail.com --services drive,docs,sheets --manual <<< ""' 2>&1 || true)
 
 # Extract the authorization URL
 AUTH_URL=$(echo "$AUTH_OUTPUT" | grep -oP 'https://accounts\.google\.com[^ ]+' | head -1)
