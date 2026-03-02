@@ -6,10 +6,25 @@ export GOG_KEYRING_PASSWORD="openclaw-google-auth"
 export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
 
+REGION="${AWS_REGION:-us-east-2}"
+
 # Check if already authenticated
 if gog auth list 2>/dev/null | grep -q "garwinopenclaw@gmail.com"; then
   echo "Google auth already configured."
   exit 0
+fi
+
+# Get gateway token from SSM
+GATEWAY_TOKEN=$(aws ssm get-parameter \
+  --name "/openclaw/openclaw-agentcore/gateway-token" \
+  --with-decryption \
+  --region "$REGION" \
+  --query 'Parameter.Value' \
+  --output text 2>/dev/null)
+
+if [ -z "$GATEWAY_TOKEN" ]; then
+  echo "ERROR: No gateway token found"
+  exit 1
 fi
 
 # Start the manual auth and capture the URL (timeout after 5 seconds)
@@ -20,25 +35,27 @@ AUTH_OUTPUT=$(timeout 5s bash -c 'gog auth add garwinopenclaw@gmail.com --servic
 AUTH_URL=$(echo "$AUTH_OUTPUT" | grep -oP 'https://accounts\.google\.com[^ ]+' | head -1)
 
 if [ -z "$AUTH_URL" ]; then
-  echo "Failed to generate auth URL. Output was:"
-  echo "$AUTH_OUTPUT"
+  echo "Failed to generate auth URL"
   exit 1
 fi
 
 # Create message for Discord
 MESSAGE="🔐 **Google OAuth Setup Required**
 
-New OpenClaw instance detected. Please complete Google authentication:
+New OpenClaw instance needs Google authentication.
 
 **Step 1:** Visit this URL:
 $AUTH_URL
 
-**Step 2:** After authorizing, you'll be redirected to a localhost URL that won't load. Copy the entire URL from your browser's address bar.
+**Step 2:** After authorizing, copy the redirect URL from your browser.
 
-**Step 3:** Send me the redirect URL and I'll complete the setup for you.
+**Step 3:** Send me the redirect URL and I'll complete the setup."
 
-This enables Google Drive, Docs, Gmail, and Calendar access."
+# Send via OpenClaw message API
+curl -s -X POST "http://localhost:18789/api/v1/message" \
+  -H "Authorization: Bearer $GATEWAY_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d "{\"action\":\"send\",\"channel\":\"discord\",\"target\":\"user:364155628756926466\",\"message\":$(echo "$MESSAGE" | jq -Rs .)}"
 
-echo "$MESSAGE"
-echo ""
+echo "Auth URL sent to Discord"
 echo "Auth URL: $AUTH_URL"
