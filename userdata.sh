@@ -98,8 +98,8 @@ else
   sudo -u ubuntu git clone https://github.com/dgarwin/dgarwin-openclaw.git /home/ubuntu/openclaw-repo
 
 # Configure git user for commits
-sudo -u ubuntu git config --global user.name "David Garwin"
-sudo -u ubuntu git config --global user.email "dgarwin@gmail.com"
+sudo -u ubuntu git config --global user.name "David Garwin - Openclaw"
+sudo -u ubuntu git config --global user.email "davidgarwin@gmail.com"
 fi
 
 # ---------------------------------------------------------------------------
