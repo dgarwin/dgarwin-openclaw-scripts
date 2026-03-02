@@ -368,8 +368,9 @@ TIMEREOF
 
 systemctl daemon-reload
 systemctl enable google-auth-setup.timer
+systemctl start google-auth-setup.timer
 
-echo "  Google OAuth setup timer installed and enabled"
+echo "  Google OAuth setup timer installed, enabled, and started"
 
 # 10. Write access instructions
 # ---------------------------------------------------------------------------
