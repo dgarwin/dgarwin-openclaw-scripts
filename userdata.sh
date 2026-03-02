@@ -35,14 +35,14 @@ export DISCORD_TOKEN=$(aws ssm get-parameter \
   --query 'Parameter.Value' \
   --output text)
 
-export GH_PAT=$(aws ssm get-parameter \
-
 export GOG_KEYRING_PASSWORD=$(aws ssm get-parameter \
   --name "/openclaw/google-keyring" \
   --with-decryption \
   --region "$REGION" \
   --query 'Parameter.Value' \
   --output text)
+
+export GH_PAT=$(aws ssm get-parameter \
   --name "/openclaw/github-pat" \
   --with-decryption \
   --region "$REGION" \
@@ -51,7 +51,7 @@ export GOG_KEYRING_PASSWORD=$(aws ssm get-parameter \
 
 # Read existing gateway token, or create a new one if absent
 export GATEWAY_TOKEN=$(aws ssm get-parameter \
-  --name "/openclaw/openclaw-agentcore/gateway-token" \
+  --name "/openclaw/gateway-token" \
   --with-decryption \
   --region "$REGION" \
   --query 'Parameter.Value' \
@@ -61,7 +61,7 @@ if [ -z "$GATEWAY_TOKEN" ]; then
   echo "  Gateway token not found — generating a new one..."
   export GATEWAY_TOKEN=$(openssl rand -hex 24)
   aws ssm put-parameter \
-    --name "/openclaw/openclaw-agentcore/gateway-token" \
+    --name "/openclaw/gateway-token" \
     --value "$GATEWAY_TOKEN" \
     --type "SecureString" \
     --region "$REGION" \
