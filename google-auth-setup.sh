@@ -29,7 +29,7 @@ fi
 
 # Start the manual auth and capture the URL (timeout after 5 seconds)
 echo "Starting Google OAuth flow..."
-AUTH_OUTPUT=$(timeout 5s bash -c 'gog auth add garwinopenclaw@gmail.com --services user --manual <<< ""' 2>&1 || true)
+AUTH_OUTPUT=$(timeout 5s bash -c 'gog auth add garwinopenclaw@gmail.com --services drive,docs,sheets user --manual <<< ""' 2>&1 || true)
 
 # Extract the authorization URL
 AUTH_URL=$(echo "$AUTH_OUTPUT" | grep -oP 'https://accounts\.google\.com[^ ]+' | head -1)
@@ -44,12 +44,12 @@ MESSAGE="🔐 **Google OAuth Setup Required**
 
 New OpenClaw instance needs Google authentication.
 
-**Step 1:** Visit this URL:
-$AUTH_URL
+**Step 1:** Visit the URL below
 
 **Step 2:** After authorizing, copy the redirect URL from your browser.
 
-**Step 3:** Send me the redirect URL and I'll complete the setup."
+**Step 3:** Send me the redirect URL and I'll complete the setup.
+$AUTH_URL"
 
 # Send via openclaw CLI
 export OPENCLAW_GATEWAY_TOKEN="$GATEWAY_TOKEN"
