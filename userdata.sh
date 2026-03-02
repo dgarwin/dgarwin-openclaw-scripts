@@ -400,7 +400,7 @@ aws ssm start-session \\
 
 STEP 2: Get Gateway Token
 aws ssm get-parameter \\
-  --name "/openclaw/openclaw-agentcore/gateway-token" \\
+  --name "/openclaw/gateway-token" \\
   --region $REGION \\
   --with-decryption \\
   --query 'Parameter.Value' \\
