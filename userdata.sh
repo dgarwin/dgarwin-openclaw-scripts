@@ -36,6 +36,13 @@ export DISCORD_TOKEN=$(aws ssm get-parameter \
   --output text)
 
 export GH_PAT=$(aws ssm get-parameter \
+
+export GOG_KEYRING_PASSWORD=$(aws ssm get-parameter \
+  --name "/openclaw/google-keyring" \
+  --with-decryption \
+  --region "$REGION" \
+  --query 'Parameter.Value' \
+  --output text)
   --name "/openclaw/github-pat" \
   --with-decryption \
   --region "$REGION" \
@@ -159,7 +166,7 @@ if [ -n "$GOOGLE_OAUTH_JSON" ]; then
   
   # Set keyring password in environment for ubuntu user
   if ! grep -q "GOG_KEYRING_PASSWORD" /home/ubuntu/.bashrc; then
-    echo 'export GOG_KEYRING_PASSWORD="openclaw-google-auth"' >> /home/ubuntu/.bashrc
+    echo 'export GOG_KEYRING_PASSWORD="$GOG_KEYRING_PASSWORD"' >> /home/ubuntu/.bashrc
   fi
   
   echo "  Google OAuth credentials configured from SSM."
@@ -333,7 +340,7 @@ systemctl start openclaw
 # ---------------------------------------------------------------------------
 echo "[9.5/10] Installing Google OAuth setup timer..."
 
-cat > /etc/systemd/system/google-auth-setup.service << 'GOOGLEEOF'
+cat > /etc/systemd/system/google-auth-setup.service << GOOGLEEOF
 [Unit]
 Description=Google OAuth Setup Check
 After=openclaw.service
@@ -343,7 +350,7 @@ Requires=openclaw.service
 Type=oneshot
 User=ubuntu
 Environment=HOME=/home/ubuntu
-Environment=GOG_KEYRING_PASSWORD=openclaw-google-auth
+Environment=GOG_KEYRING_PASSWORD=${GOG_KEYRING_PASSWORD}
 WorkingDirectory=/home/ubuntu
 ExecStart=/bin/bash /opt/openclaw-scripts/google-auth-setup.sh
 StandardOutput=journal
