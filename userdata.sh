@@ -96,6 +96,10 @@ if [ -d /home/ubuntu/openclaw-repo/.git ]; then
   sudo -u ubuntu git -C /home/ubuntu/openclaw-repo pull
 else
   sudo -u ubuntu git clone https://github.com/dgarwin/dgarwin-openclaw.git /home/ubuntu/openclaw-repo
+
+# Configure git user for commits
+sudo -u ubuntu git config --global user.name "David Garwin"
+sudo -u ubuntu git config --global user.email "dgarwin@gmail.com"
 fi
 
 # ---------------------------------------------------------------------------
@@ -292,6 +296,14 @@ for md_file in AGENTS.md SOUL.md TOOLS.md IDENTITY.md USER.md HEARTBEAT.md BOOTS
   fi
 done
 chown -R ubuntu:ubuntu /home/ubuntu/docs
+
+# Import cron jobs if they exist
+if [ -f "/home/ubuntu/openclaw-repo/cron-jobs.json" ]; then
+  sudo -u ubuntu mkdir -p /home/ubuntu/.openclaw/cron
+  cp /home/ubuntu/openclaw-repo/cron-jobs.json /home/ubuntu/.openclaw/cron/jobs.json
+  chown ubuntu:ubuntu /home/ubuntu/.openclaw/cron/jobs.json
+  echo "  Imported cron jobs from repo"
+fi
 
 # ---------------------------------------------------------------------------
 # 9. Install systemd service
