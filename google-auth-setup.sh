@@ -51,11 +51,9 @@ $AUTH_URL
 
 **Step 3:** Send me the redirect URL and I'll complete the setup."
 
-# Send via OpenClaw message API
-curl -s -X POST "http://localhost:18789/api/v1/message" \
-  -H "Authorization: Bearer $GATEWAY_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d "{\"action\":\"send\",\"channel\":\"discord\",\"target\":\"user:364155628756926466\",\"message\":$(echo "$MESSAGE" | jq -Rs .)}"
+# Write URL to file that OpenClaw can read
+echo "$AUTH_URL" > /tmp/google-auth-url.txt
+echo "$MESSAGE" > /tmp/google-auth-message.txt
 
-echo "Auth URL sent to Discord"
 echo "Auth URL: $AUTH_URL"
+echo "Message saved to /tmp/google-auth-message.txt"
