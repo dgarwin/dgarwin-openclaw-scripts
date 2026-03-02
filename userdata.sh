@@ -298,11 +298,235 @@ done
 chown -R ubuntu:ubuntu /home/ubuntu/docs
 
 # Import cron jobs if they exist
+
+# ---------------------------------------------------------------------------
+# Configure Google OAuth credentials
+# ---------------------------------------------------------------------------
+echo "[8.5/9] Configuring Google OAuth..."
+
+# Fetch Google OAuth credentials from SSM
+GOOGLE_OAUTH_JSON=$(aws ssm get-parameter \
+  --name "/openclaw/google" \
+  --with-decryption \
+  --region "$REGION" \
+  --query 'Parameter.Value' \
+  --output text 2>/dev/null || echo "")
+
+if [ -n "$GOOGLE_OAUTH_JSON" ]; then
+  sudo -u ubuntu mkdir -p /home/ubuntu/.config/gogcli
+  
+  # Extract client_id and client_secret from the JSON
+  echo "$GOOGLE_OAUTH_JSON" | python3 -c 'import json, sys; data = json.load(sys.stdin); creds = data.get("installed", data); print(json.dumps({"client_id": creds["client_id"], "client_secret": creds["client_secret"]}, indent=2))' > /home/ubuntu/.config/gogcli/credentials.json
+  
+  chmod 600 /home/ubuntu/.config/gogcli/credentials.json
+  chown -R ubuntu:ubuntu /home/ubuntu/.config/gogcli
+  
+  # Set keyring password in environment for ubuntu user
+  if ! grep -q "GOG_KEYRING_PASSWORD" /home/ubuntu/.bashrc; then
+    echo 'export GOG_KEYRING_PASSWORD="openclaw-google-auth"' >> /home/ubuntu/.bashrc
+  fi
+  
+  echo "  Google OAuth credentials configured from SSM."
+else
+  echo "  Warning: Google OAuth credentials not found in SSM. Skipping gogcli auth setup."
+fi
 if [ -f "/home/ubuntu/openclaw-repo/cron-jobs.json" ]; then
+
+# ---------------------------------------------------------------------------
+# Configure Google OAuth credentials
+# ---------------------------------------------------------------------------
+echo "[8.5/9] Configuring Google OAuth..."
+
+# Fetch Google OAuth credentials from SSM
+GOOGLE_OAUTH_JSON=$(aws ssm get-parameter \
+  --name "/openclaw/google" \
+  --with-decryption \
+  --region "$REGION" \
+  --query 'Parameter.Value' \
+  --output text 2>/dev/null || echo "")
+
+if [ -n "$GOOGLE_OAUTH_JSON" ]; then
+  sudo -u ubuntu mkdir -p /home/ubuntu/.config/gogcli
+  
+  # Extract client_id and client_secret from the JSON
+  echo "$GOOGLE_OAUTH_JSON" | python3 -c 'import json, sys; data = json.load(sys.stdin); creds = data.get("installed", data); print(json.dumps({"client_id": creds["client_id"], "client_secret": creds["client_secret"]}, indent=2))' > /home/ubuntu/.config/gogcli/credentials.json
+  
+  chmod 600 /home/ubuntu/.config/gogcli/credentials.json
+  chown -R ubuntu:ubuntu /home/ubuntu/.config/gogcli
+  
+  # Set keyring password in environment for ubuntu user
+  if ! grep -q "GOG_KEYRING_PASSWORD" /home/ubuntu/.bashrc; then
+    echo 'export GOG_KEYRING_PASSWORD="openclaw-google-auth"' >> /home/ubuntu/.bashrc
+  fi
+  
+  echo "  Google OAuth credentials configured from SSM."
+else
+  echo "  Warning: Google OAuth credentials not found in SSM. Skipping gogcli auth setup."
+fi
   sudo -u ubuntu mkdir -p /home/ubuntu/.openclaw/cron
+
+# ---------------------------------------------------------------------------
+# Configure Google OAuth credentials
+# ---------------------------------------------------------------------------
+echo "[8.5/9] Configuring Google OAuth..."
+
+# Fetch Google OAuth credentials from SSM
+GOOGLE_OAUTH_JSON=$(aws ssm get-parameter \
+  --name "/openclaw/google" \
+  --with-decryption \
+  --region "$REGION" \
+  --query 'Parameter.Value' \
+  --output text 2>/dev/null || echo "")
+
+if [ -n "$GOOGLE_OAUTH_JSON" ]; then
+  sudo -u ubuntu mkdir -p /home/ubuntu/.config/gogcli
+  
+  # Extract client_id and client_secret from the JSON
+  echo "$GOOGLE_OAUTH_JSON" | python3 -c 'import json, sys; data = json.load(sys.stdin); creds = data.get("installed", data); print(json.dumps({"client_id": creds["client_id"], "client_secret": creds["client_secret"]}, indent=2))' > /home/ubuntu/.config/gogcli/credentials.json
+  
+  chmod 600 /home/ubuntu/.config/gogcli/credentials.json
+  chown -R ubuntu:ubuntu /home/ubuntu/.config/gogcli
+  
+  # Set keyring password in environment for ubuntu user
+  if ! grep -q "GOG_KEYRING_PASSWORD" /home/ubuntu/.bashrc; then
+    echo 'export GOG_KEYRING_PASSWORD="openclaw-google-auth"' >> /home/ubuntu/.bashrc
+  fi
+  
+  echo "  Google OAuth credentials configured from SSM."
+else
+  echo "  Warning: Google OAuth credentials not found in SSM. Skipping gogcli auth setup."
+fi
   cp /home/ubuntu/openclaw-repo/cron-jobs.json /home/ubuntu/.openclaw/cron/jobs.json
+
+# ---------------------------------------------------------------------------
+# Configure Google OAuth credentials
+# ---------------------------------------------------------------------------
+echo "[8.5/9] Configuring Google OAuth..."
+
+# Fetch Google OAuth credentials from SSM
+GOOGLE_OAUTH_JSON=$(aws ssm get-parameter \
+  --name "/openclaw/google" \
+  --with-decryption \
+  --region "$REGION" \
+  --query 'Parameter.Value' \
+  --output text 2>/dev/null || echo "")
+
+if [ -n "$GOOGLE_OAUTH_JSON" ]; then
+  sudo -u ubuntu mkdir -p /home/ubuntu/.config/gogcli
+  
+  # Extract client_id and client_secret from the JSON
+  echo "$GOOGLE_OAUTH_JSON" | python3 -c 'import json, sys; data = json.load(sys.stdin); creds = data.get("installed", data); print(json.dumps({"client_id": creds["client_id"], "client_secret": creds["client_secret"]}, indent=2))' > /home/ubuntu/.config/gogcli/credentials.json
+  
+  chmod 600 /home/ubuntu/.config/gogcli/credentials.json
+  chown -R ubuntu:ubuntu /home/ubuntu/.config/gogcli
+  
+  # Set keyring password in environment for ubuntu user
+  if ! grep -q "GOG_KEYRING_PASSWORD" /home/ubuntu/.bashrc; then
+    echo 'export GOG_KEYRING_PASSWORD="openclaw-google-auth"' >> /home/ubuntu/.bashrc
+  fi
+  
+  echo "  Google OAuth credentials configured from SSM."
+else
+  echo "  Warning: Google OAuth credentials not found in SSM. Skipping gogcli auth setup."
+fi
   chown ubuntu:ubuntu /home/ubuntu/.openclaw/cron/jobs.json
+
+# ---------------------------------------------------------------------------
+# Configure Google OAuth credentials
+# ---------------------------------------------------------------------------
+echo "[8.5/9] Configuring Google OAuth..."
+
+# Fetch Google OAuth credentials from SSM
+GOOGLE_OAUTH_JSON=$(aws ssm get-parameter \
+  --name "/openclaw/google" \
+  --with-decryption \
+  --region "$REGION" \
+  --query 'Parameter.Value' \
+  --output text 2>/dev/null || echo "")
+
+if [ -n "$GOOGLE_OAUTH_JSON" ]; then
+  sudo -u ubuntu mkdir -p /home/ubuntu/.config/gogcli
+  
+  # Extract client_id and client_secret from the JSON
+  echo "$GOOGLE_OAUTH_JSON" | python3 -c 'import json, sys; data = json.load(sys.stdin); creds = data.get("installed", data); print(json.dumps({"client_id": creds["client_id"], "client_secret": creds["client_secret"]}, indent=2))' > /home/ubuntu/.config/gogcli/credentials.json
+  
+  chmod 600 /home/ubuntu/.config/gogcli/credentials.json
+  chown -R ubuntu:ubuntu /home/ubuntu/.config/gogcli
+  
+  # Set keyring password in environment for ubuntu user
+  if ! grep -q "GOG_KEYRING_PASSWORD" /home/ubuntu/.bashrc; then
+    echo 'export GOG_KEYRING_PASSWORD="openclaw-google-auth"' >> /home/ubuntu/.bashrc
+  fi
+  
+  echo "  Google OAuth credentials configured from SSM."
+else
+  echo "  Warning: Google OAuth credentials not found in SSM. Skipping gogcli auth setup."
+fi
   echo "  Imported cron jobs from repo"
+
+# ---------------------------------------------------------------------------
+# Configure Google OAuth credentials
+# ---------------------------------------------------------------------------
+echo "[8.5/9] Configuring Google OAuth..."
+
+# Fetch Google OAuth credentials from SSM
+GOOGLE_OAUTH_JSON=$(aws ssm get-parameter \
+  --name "/openclaw/google" \
+  --with-decryption \
+  --region "$REGION" \
+  --query 'Parameter.Value' \
+  --output text 2>/dev/null || echo "")
+
+if [ -n "$GOOGLE_OAUTH_JSON" ]; then
+  sudo -u ubuntu mkdir -p /home/ubuntu/.config/gogcli
+  
+  # Extract client_id and client_secret from the JSON
+  echo "$GOOGLE_OAUTH_JSON" | python3 -c 'import json, sys; data = json.load(sys.stdin); creds = data.get("installed", data); print(json.dumps({"client_id": creds["client_id"], "client_secret": creds["client_secret"]}, indent=2))' > /home/ubuntu/.config/gogcli/credentials.json
+  
+  chmod 600 /home/ubuntu/.config/gogcli/credentials.json
+  chown -R ubuntu:ubuntu /home/ubuntu/.config/gogcli
+  
+  # Set keyring password in environment for ubuntu user
+  if ! grep -q "GOG_KEYRING_PASSWORD" /home/ubuntu/.bashrc; then
+    echo 'export GOG_KEYRING_PASSWORD="openclaw-google-auth"' >> /home/ubuntu/.bashrc
+  fi
+  
+  echo "  Google OAuth credentials configured from SSM."
+else
+  echo "  Warning: Google OAuth credentials not found in SSM. Skipping gogcli auth setup."
+fi
+fi
+
+# ---------------------------------------------------------------------------
+# Configure Google OAuth credentials
+# ---------------------------------------------------------------------------
+echo "[8.5/9] Configuring Google OAuth..."
+
+# Fetch Google OAuth credentials from SSM
+GOOGLE_OAUTH_JSON=$(aws ssm get-parameter \
+  --name "/openclaw/google" \
+  --with-decryption \
+  --region "$REGION" \
+  --query 'Parameter.Value' \
+  --output text 2>/dev/null || echo "")
+
+if [ -n "$GOOGLE_OAUTH_JSON" ]; then
+  sudo -u ubuntu mkdir -p /home/ubuntu/.config/gogcli
+  
+  # Extract client_id and client_secret from the JSON
+  echo "$GOOGLE_OAUTH_JSON" | python3 -c 'import json, sys; data = json.load(sys.stdin); creds = data.get("installed", data); print(json.dumps({"client_id": creds["client_id"], "client_secret": creds["client_secret"]}, indent=2))' > /home/ubuntu/.config/gogcli/credentials.json
+  
+  chmod 600 /home/ubuntu/.config/gogcli/credentials.json
+  chown -R ubuntu:ubuntu /home/ubuntu/.config/gogcli
+  
+  # Set keyring password in environment for ubuntu user
+  if ! grep -q "GOG_KEYRING_PASSWORD" /home/ubuntu/.bashrc; then
+    echo 'export GOG_KEYRING_PASSWORD="openclaw-google-auth"' >> /home/ubuntu/.bashrc
+  fi
+  
+  echo "  Google OAuth credentials configured from SSM."
+else
+  echo "  Warning: Google OAuth credentials not found in SSM. Skipping gogcli auth setup."
 fi
 
 # ---------------------------------------------------------------------------
