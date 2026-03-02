@@ -16,7 +16,7 @@ fi
 
 # Get gateway token from SSM
 GATEWAY_TOKEN=$(aws ssm get-parameter \
-  --name "/openclaw/openclaw-agentcore/gateway-token" \
+  --name "/openclaw/gateway-token" \
   --with-decryption \
   --region "$REGION" \
   --query 'Parameter.Value' \
