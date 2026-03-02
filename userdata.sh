@@ -557,6 +557,49 @@ systemctl enable openclaw
 systemctl start openclaw
 
 # ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# 9.5. Install Google OAuth setup timer (runs 5min after boot)
+# ---------------------------------------------------------------------------
+echo "[9.5/10] Installing Google OAuth setup timer..."
+
+cat > /etc/systemd/system/google-auth-setup.service << 'GOOGLEEOF'
+[Unit]
+Description=Google OAuth Setup Check
+After=openclaw.service
+Requires=openclaw.service
+
+[Service]
+Type=oneshot
+User=ubuntu
+Environment=HOME=/home/ubuntu
+Environment=GOG_KEYRING_PASSWORD=openclaw-google-auth
+WorkingDirectory=/home/ubuntu
+ExecStart=/bin/bash /opt/openclaw-scripts/google-auth-setup.sh
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
+GOOGLEEOF
+
+cat > /etc/systemd/system/google-auth-setup.timer << 'TIMEREOF'
+[Unit]
+Description=Google OAuth Setup Check Timer
+Requires=openclaw.service
+
+[Timer]
+OnBootSec=5min
+Unit=google-auth-setup.service
+
+[Install]
+WantedBy=timers.target
+TIMEREOF
+
+systemctl daemon-reload
+systemctl enable google-auth-setup.timer
+
+echo "  Google OAuth setup timer installed and enabled"
+
 # 10. Write access instructions
 # ---------------------------------------------------------------------------
 echo "[10/10] Writing access instructions..."
@@ -592,3 +635,12 @@ INSTRUCTIONS
 chown ubuntu:ubuntu /home/ubuntu/ACCESS_INSTRUCTIONS.txt
 
 echo "=== userdata.sh complete: $(date) ==="
+
+# ---------------------------------------------------------------------------
+# Create one-time Google OAuth setup cron (5 min after boot)
+# ---------------------------------------------------------------------------
+echo "[10/10] Scheduling Google OAuth setup check..."
+
+# Calculate 5 minutes from now
+FIVE_MIN_FROM_NOW=$(date -u -d '+5 minutes' '+%Y-%m-%dT%H:%M:%S.000Z')
+
