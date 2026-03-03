@@ -99,10 +99,7 @@ chown ubuntu:ubuntu /home/ubuntu/.git-credentials
 # ---------------------------------------------------------------------------
 echo "[3/9] Syncing OpenClaw repository..."
 
-if [ -d /home/ubuntu/openclaw-repo/.git ]; then
-  sudo -u ubuntu git -C /home/ubuntu/openclaw-repo pull
-else
-  sudo -u ubuntu git clone https://github.com/dgarwin/dgarwin-openclaw.git /home/ubuntu/openclaw-repo
+# Removed duplicate clone - using /opt/openclaw-repo instead
 
 # Configure git user for commits
 sudo -u ubuntu git config --global user.name "David Garwin"
@@ -224,7 +221,7 @@ echo "[7/9] Configuring openclaw.json..."
 
 sudo -u ubuntu mkdir -p /home/ubuntu/.openclaw
 
-cp /home/ubuntu/openclaw-repo/openclaw.json /home/ubuntu/.openclaw/openclaw.json
+cp /opt/openclaw-repo/openclaw.json /home/ubuntu/.openclaw/openclaw.json
 
 # Determine actual UI root path (depends on installed node version)
 NVM_DIR="/home/ubuntu/.nvm"
@@ -282,8 +279,8 @@ echo "[8/9] Loading workspace .md files from repo..."
 sudo -u ubuntu mkdir -p /home/ubuntu/.openclaw/workspace
 
 for md_file in AGENTS.md SOUL.md TOOLS.md IDENTITY.md USER.md HEARTBEAT.md BOOTSTRAP.md MEMORY.md; do
-  if [ -f "/home/ubuntu/openclaw-repo/$md_file" ]; then
-    cp "/home/ubuntu/openclaw-repo/$md_file" "/home/ubuntu/.openclaw/workspace/$md_file"
+  if [ -f "/opt/openclaw-repo/$md_file" ]; then
+    cp "/opt/openclaw-repo/$md_file" "/home/ubuntu/.openclaw/workspace/$md_file"
     echo "  Copied $md_file"
   fi
 done
@@ -293,16 +290,16 @@ chown -R ubuntu:ubuntu /home/ubuntu/.openclaw/workspace
 # Also copy to the path openclaw expects for template resolution
 sudo -u ubuntu mkdir -p /home/ubuntu/docs/reference/templates
 for md_file in AGENTS.md SOUL.md TOOLS.md IDENTITY.md USER.md HEARTBEAT.md BOOTSTRAP.md MEMORY.md; do
-  if [ -f "/home/ubuntu/openclaw-repo/$md_file" ]; then
-    cp "/home/ubuntu/openclaw-repo/$md_file" "/home/ubuntu/docs/reference/templates/$md_file"
+  if [ -f "/opt/openclaw-repo/$md_file" ]; then
+    cp "/opt/openclaw-repo/$md_file" "/home/ubuntu/docs/reference/templates/$md_file"
   fi
 done
 chown -R ubuntu:ubuntu /home/ubuntu/docs
 
 # Import cron jobs if they exist
-if [ -f "/home/ubuntu/openclaw-repo/cron-jobs.json" ]; then
+if [ -f "/opt/openclaw-repo/cron-jobs.json" ]; then
   sudo -u ubuntu mkdir -p /home/ubuntu/.openclaw/cron
-  cp /home/ubuntu/openclaw-repo/cron-jobs.json /home/ubuntu/.openclaw/cron/jobs.json
+  cp /opt/openclaw-repo/cron-jobs.json /home/ubuntu/.openclaw/cron/jobs.json
   chown ubuntu:ubuntu /home/ubuntu/.openclaw/cron/jobs.json
   echo "  Imported cron jobs from repo"
 fi
