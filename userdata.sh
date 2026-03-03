@@ -16,6 +16,9 @@ if [ ! -d /opt/openclaw-repo ]; then
   git clone "https://dgarwin:$GH_PAT@github.com/dgarwin/dgarwin-openclaw.git" /opt/openclaw-repo
 fi
 
+# Make openclaw-repo owned by ubuntu user for easy editing
+chown -R ubuntu:ubuntu /opt/openclaw-repo
+
 # ---------------------------------------------------------------------------
 # 1. Get secrets from SSM
 # ---------------------------------------------------------------------------
