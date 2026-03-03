@@ -3,7 +3,7 @@
 set -e
 
 WORKSPACE_DIR="/home/ubuntu/.openclaw/workspace"
-REPO_DIR="/home/ubuntu/openclaw-repo"
+REPO_DIR="/opt/openclaw-repo"
 OPENCLAW_DIR="/home/ubuntu/.openclaw"
 
 cd "$REPO_DIR"
