@@ -413,4 +413,14 @@ INSTRUCTIONS
 
 chown ubuntu:ubuntu /home/ubuntu/ACCESS_INSTRUCTIONS.txt
 
+# ---------------------------------------------------------------------------
+# Run setup.sh from openclaw-repo (installs skills, applies config)
+# ---------------------------------------------------------------------------
+echo "[Final] Running OpenClaw repository setup..."
+if [ -f /opt/openclaw-repo/setup.sh ]; then
+  bash /opt/openclaw-repo/setup.sh
+else
+  echo "⚠️  Warning: setup.sh not found in openclaw-repo, skipping"
+fi
+
 echo "=== userdata.sh complete: $(date) ==="
