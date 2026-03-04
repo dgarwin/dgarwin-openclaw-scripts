@@ -9,17 +9,10 @@ OPENCLAW_DIR="/home/ubuntu/.openclaw"
 cd "$REPO_DIR"
 
 # Copy updated .md files from workspace to repo
-for md_file in AGENTS.md SOUL.md TOOLS.md IDENTITY.md USER.md HEARTBEAT.md MEMORY.md; do
-  if [ -f "$WORKSPACE_DIR/$md_file" ]; then
-    cp "$WORKSPACE_DIR/$md_file" "$REPO_DIR/$md_file"
-  fi
-done
+cp "$WORKSPACE_DIR"/*.md "$REPO_DIR/" 2>/dev/null || true
 
 # Copy memory/ folder if it exists
-if [ -d "$WORKSPACE_DIR/memory" ]; then
-  mkdir -p "$REPO_DIR/memory"
-  cp -r "$WORKSPACE_DIR/memory/"* "$REPO_DIR/memory/" 2>/dev/null || true
-fi
+cp "$WORKSPACE_DIR"/memory/*.md "$REPO_DIR/memory" 2>/dev/null || true
 
 # Copy cron jobs
 if [ -f "$OPENCLAW_DIR/cron/jobs.json" ]; then
