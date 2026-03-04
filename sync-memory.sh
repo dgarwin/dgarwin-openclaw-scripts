@@ -30,4 +30,23 @@ git add *.md cron-jobs.json memory/ 2>/dev/null || git add *.md cron-jobs.json
 git commit -m "Auto-sync workspace memory files - $(date -u +%Y-%m-%d)"
 git push
 
-echo "Memory files and cron jobs synced to GitHub"
+# Get gateway token from SSM
+GATEWAY_TOKEN=$(aws ssm get-parameter \
+  --name "/openclaw/gateway-token" \
+  --with-decryption \
+  --region "$REGION" \
+  --query 'Parameter.Value' \
+  --output text 2>/dev/null)
+
+if [ -z "$GATEWAY_TOKEN" ]; then
+  echo "ERROR: No gateway token found"
+  exit 1
+fi
+
+MESSAGE="Successfully pushed MD files and cron to git!"
+
+export OPENCLAW_GATEWAY_TOKEN="$GATEWAY_TOKEN"
+openclaw message send --channel discord --target user:364155628756926466 --message "$MESSAGE"
+
+
+echo "MD files and cron jobs synced to GitHub"
