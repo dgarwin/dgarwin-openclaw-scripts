@@ -166,7 +166,8 @@ if [ -n "$GOOGLE_OAUTH_JSON" ]; then
   
   # Set keyring password in environment for ubuntu user
   if ! grep -q "GOG_KEYRING_PASSWORD" /home/ubuntu/.bashrc; then
-    echo 'export GOG_KEYRING_PASSWORD="$GOG_KEYRING_PASSWORD"' >> /home/ubuntu/.bashrc
+    # Add at the top of .bashrc before the interactive check
+    sed -i '5i\# Export environment variables before interactive check\nexport GOG_KEYRING_PASSWORD="openclaw-google-auth"\n' /home/ubuntu/.bashrc
   fi
   
   echo "  Google OAuth credentials configured from SSM."

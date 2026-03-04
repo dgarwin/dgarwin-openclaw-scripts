@@ -15,6 +15,12 @@ for md_file in AGENTS.md SOUL.md TOOLS.md IDENTITY.md USER.md HEARTBEAT.md MEMOR
   fi
 done
 
+# Copy memory/ folder if it exists
+if [ -d "$WORKSPACE_DIR/memory" ]; then
+  mkdir -p "$REPO_DIR/memory"
+  cp -r "$WORKSPACE_DIR/memory/"* "$REPO_DIR/memory/" 2>/dev/null || true
+fi
+
 # Copy cron jobs
 if [ -f "$OPENCLAW_DIR/cron/jobs.json" ]; then
   cp "$OPENCLAW_DIR/cron/jobs.json" "$REPO_DIR/cron-jobs.json"
@@ -27,7 +33,7 @@ if git diff --quiet && git diff --cached --quiet; then
 fi
 
 # Commit and push changes
-git add *.md cron-jobs.json
+git add *.md cron-jobs.json memory/ 2>/dev/null || git add *.md cron-jobs.json
 git commit -m "Auto-sync workspace memory files - $(date -u +%Y-%m-%d)"
 git push
 
