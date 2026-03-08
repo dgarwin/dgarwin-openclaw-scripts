@@ -16,14 +16,17 @@ export GOG_KEYRING_PASSWORD="openclaw-google-auth"
 export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
 
-# Determine services/scopes based on account
+# Determine services and readonly flag based on account
 if [[ "$ACCOUNT" == "davidgarwin@gmail.com" ]]; then
-  # Use explicit scope for read-only tasks
-  echo "$REDIRECT_URL" | gog auth add "$ACCOUNT" --scopes https://www.googleapis.com/auth/tasks.readonly --manual
+  SERVICES="tasks"
+  READONLY_FLAG="--readonly"
 else
-  # Use service shortcuts for full access
-  echo "$REDIRECT_URL" | gog auth add "$ACCOUNT" --services drive,docs,sheets,calendar,gmail --manual
+  SERVICES="drive,docs,sheets,calendar,gmail"
+  READONLY_FLAG=""
 fi
+
+# Run the auth command and pipe in the redirect URL
+echo "$REDIRECT_URL" | gog auth add "$ACCOUNT" --services "$SERVICES" $READONLY_FLAG --manual
 
 if [ $? -eq 0 ]; then
   echo "✅ Google authentication successful for $ACCOUNT!"
