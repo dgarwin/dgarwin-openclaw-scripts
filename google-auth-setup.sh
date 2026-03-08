@@ -75,5 +75,31 @@ fi
 
 # Set up davidgarwin@gmail.com for tasks readonly if needed
 if ! gog auth list 2>/dev/null | grep -q "davidgarwin@gmail.com"; then
-  send_auth_message "davidgarwin@gmail.com" "tasks"
+  # Note: Using full scope URL for read-only tasks access
+  # The send_auth_message function will need to handle this differently
+  echo "Starting Google OAuth flow for davidgarwin@gmail.com (tasks readonly)..."
+  AUTH_OUTPUT=$(timeout 5s bash -c "gog auth add davidgarwin@gmail.com --scopes https://www.googleapis.com/auth/tasks.readonly --manual <<< \"\"" 2>&1 || true)
+  
+  AUTH_URL=$(echo "$AUTH_OUTPUT" | grep -oP 'https://accounts\.google\.com[^ ]+' | head -1)
+  
+  if [ -n "$AUTH_URL" ]; then
+    MESSAGE="🔐 **Google OAuth Setup Required: davidgarwin@gmail.com (Read-Only Tasks)**
+
+New OpenClaw instance needs Google Tasks authentication (read-only).
+
+**Step 1:** Visit the URL below
+
+**Step 2:** After authorizing, copy the redirect URL from your browser.
+
+**Step 3:** Send me the redirect URL and I'll complete the setup.
+$AUTH_URL"
+    
+    export OPENCLAW_GATEWAY_TOKEN="$GATEWAY_TOKEN"
+    openclaw message send --channel discord --target user:364155628756926466 --message "$MESSAGE"
+    
+    echo "✅ Auth URL sent to Discord for davidgarwin@gmail.com"
+    echo "Auth URL: $AUTH_URL"
+  else
+    echo "Failed to generate auth URL for davidgarwin@gmail.com"
+  fi
 fi
