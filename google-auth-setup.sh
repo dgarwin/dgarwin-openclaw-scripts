@@ -9,8 +9,16 @@ export NVM_DIR="$HOME/.nvm"
 REGION="${AWS_REGION:-us-east-2}"
 
 # Check if already authenticated
+ALREADY_AUTHED=0
 if gog auth list 2>/dev/null | grep -q "garwinopenclaw@gmail.com"; then
-  echo "Google auth already configured."
+  ALREADY_AUTHED=$((ALREADY_AUTHED + 1))
+fi
+if gog auth list 2>/dev/null | grep -q "davidgarwin@gmail.com"; then
+  ALREADY_AUTHED=$((ALREADY_AUTHED + 1))
+fi
+
+if [ "$ALREADY_AUTHED" -eq 2 ]; then
+  echo "Google auth already configured for both accounts."
   exit 0
 fi
 
@@ -27,20 +35,22 @@ if [ -z "$GATEWAY_TOKEN" ]; then
   exit 1
 fi
 
-# Start the manual auth and capture the URL (timeout after 5 seconds)
-echo "Starting Google OAuth flow..."
-AUTH_OUTPUT=$(timeout 5s bash -c 'gog auth add garwinopenclaw@gmail.com --services drive,docs,sheets,calendar,gmail --manual <<< ""' 2>&1 || true)
-
-# Extract the authorization URL
-AUTH_URL=$(echo "$AUTH_OUTPUT" | grep -oP 'https://accounts\.google\.com[^ ]+' | head -1)
-
-if [ -z "$AUTH_URL" ]; then
-  echo "Failed to generate auth URL"
-  exit 1
-fi
-
-# Create message for Discord
-MESSAGE="🔐 **Google OAuth Setup Required**
+# Function to send auth message for an account
+send_auth_message() {
+  local ACCOUNT=$1
+  local SERVICES=$2
+  
+  echo "Starting Google OAuth flow for $ACCOUNT..."
+  AUTH_OUTPUT=$(timeout 5s bash -c "gog auth add $ACCOUNT --services $SERVICES --manual <<< \"\"" 2>&1 || true)
+  
+  AUTH_URL=$(echo "$AUTH_OUTPUT" | grep -oP 'https://accounts\.google\.com[^ ]+' | head -1)
+  
+  if [ -z "$AUTH_URL" ]; then
+    echo "Failed to generate auth URL for $ACCOUNT"
+    return 1
+  fi
+  
+  MESSAGE="🔐 **Google OAuth Setup Required: $ACCOUNT**
 
 New OpenClaw instance needs Google authentication.
 
@@ -50,10 +60,20 @@ New OpenClaw instance needs Google authentication.
 
 **Step 3:** Send me the redirect URL and I'll complete the setup.
 $AUTH_URL"
+  
+  export OPENCLAW_GATEWAY_TOKEN="$GATEWAY_TOKEN"
+  openclaw message send --channel discord --target user:364155628756926466 --message "$MESSAGE"
+  
+  echo "✅ Auth URL sent to Discord for $ACCOUNT"
+  echo "Auth URL: $AUTH_URL"
+}
 
-# Send via openclaw CLI
-export OPENCLAW_GATEWAY_TOKEN="$GATEWAY_TOKEN"
-openclaw message send --channel discord --target user:364155628756926466 --message "$MESSAGE"
+# Set up garwinopenclaw@gmail.com if needed
+if ! gog auth list 2>/dev/null | grep -q "garwinopenclaw@gmail.com"; then
+  send_auth_message "garwinopenclaw@gmail.com" "drive,docs,sheets,calendar,gmail"
+fi
 
-echo "✅ Auth URL sent to Discord"
-echo "Auth URL: $AUTH_URL"
+# Set up davidgarwin@gmail.com for tasks readonly if needed
+if ! gog auth list 2>/dev/null | grep -q "davidgarwin@gmail.com"; then
+  send_auth_message "davidgarwin@gmail.com" "tasks"
+fi
