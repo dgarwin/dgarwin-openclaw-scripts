@@ -40,17 +40,33 @@ echo "Checking tasks for account: $ACCOUNT" >&2
 echo "Today: $TODAY | Cutoff: $CUTOFF_DATE" >&2
 echo "" >&2
 
+# First, fetch all task list IDs
+echo "Fetching task list IDs..." >&2
+declare -A LIST_IDS
+while IFS=$'\t' read -r title id; do
+  LIST_IDS["$title"]="$id"
+done < <(gog tasks lists list --account "$ACCOUNT" --json 2>/dev/null | \
+  jq -r '.tasklists[] | "\(.title)\t\(.id)"')
+
 # Fetch tasks from each list
 for LIST in "${LISTS[@]}"; do
-  echo "Fetching $LIST tasks..." >&2
+  LIST_ID="${LIST_IDS[$LIST]}"
+  
+  if [[ -z "$LIST_ID" ]]; then
+    echo "Warning: Task list '$LIST' not found" >&2
+    continue
+  fi
+  
+  echo "Fetching $LIST tasks (ID: $LIST_ID)..." >&2
   
   # Run gog tasks list and parse JSON output
-  gog tasks list --account "$ACCOUNT" --list "$LIST" --format json 2>/dev/null | \
+  gog tasks list "$LIST_ID" --account "$ACCOUNT" --json 2>/dev/null | \
     jq -r --arg list "$LIST" --arg today "$TODAY" --arg cutoff "$CUTOFF_DATE" '
-      .items[]? | 
+      .tasks[]? | 
       select(.due != null) |
-      select(.due <= $cutoff) |
-      "\($list)\t\(.title)\t\(.due)\t\(.status // "needsAction")"
+      .dueDate = (.due | split("T")[0]) |
+      select(.dueDate <= $cutoff) |
+      "\($list)\t\(.title)\t\(.dueDate)\t\(.status // "needsAction")"
     ' >> "$TEMP_FILE" || true
 done
 
