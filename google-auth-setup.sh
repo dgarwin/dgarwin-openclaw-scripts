@@ -66,7 +66,7 @@ send_auth_message() {
   if [ -n "$READONLY_FLAG" ]; then
     AUTH_OUTPUT=$(timeout 5s bash -c "gog auth add $ACCOUNT --services $SERVICES --readonly --step 1 --remote<<< \"\"" 2>&1 || true)
   else
-    AUTH_OUTPUT=$(timeout 5s bash -c "gog auth add $ACCOUNT --services $SERVICES --step 2--remote<<< \"\"" 2>&1 || true)
+    AUTH_OUTPUT=$(timeout 5s bash -c "gog auth add $ACCOUNT --services $SERVICES --step 2 --remote<<< \"\"" 2>&1 || true)
   fi
   
   AUTH_URL=$(echo "$AUTH_OUTPUT" | grep -oP 'https://accounts\.google\.com[^ ]+' | head -1)
@@ -80,10 +80,11 @@ send_auth_message() {
 
 # Set up garwinopenclaw@gmail.com if needed
 if ! gog auth list 2>/dev/null | grep -q "garwinopenclaw@gmail.com"; then
-  send_auth_message "garwinopenclaw@gmail.com" "drive,docs,sheets,calendar,gmail" "" "New OpenClaw instance needs Google authentication."
+  gog auth add "garwinopenclaw@gmail.com" --services "drive,docs,sheets,calendar,gmail"  --step 1 --remote
+
 fi
 
 # Set up davidgarwin@gmail.com for tasks readonly if needed
 if ! gog auth list 2>/dev/null | grep -q "davidgarwin@gmail.com"; then
-  send_auth_message "davidgarwin@gmail.com" "tasks" "--readonly" "New OpenClaw instance needs Google Tasks authentication (read-only)."
+  gog auth add "davidgarwin@gmail.com" --services "tasks" --readonly --step 1 --remote
 fi
