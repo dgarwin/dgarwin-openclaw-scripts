@@ -221,9 +221,9 @@ sudo -u ubuntu aws configure set region "$REGION"
 sudo -u ubuntu aws configure set output json
 
 # ---------------------------------------------------------------------------
-# 7. Configure openclaw.json and .env for SecretRefs
+# 7. Build openclaw.json — copy from repo, inject secrets
 # ---------------------------------------------------------------------------
-echo "[7/9] Configuring openclaw.json and environment..."
+echo "[7/9] Configuring openclaw.json..."
 
 sudo -u ubuntu mkdir -p /home/ubuntu/.openclaw
 
@@ -240,12 +240,20 @@ if [ -s "$NVM_DIR/nvm.sh" ]; then
   fi
 fi
 
-# Update only non-secret config (UI root, bedrock URL)
 python3 << PYEOF
 import json, os
 
 with open('/home/ubuntu/.openclaw/openclaw.json', 'r') as f:
     config = json.load(f)
+
+# Gateway token
+config.setdefault('gateway', {}).setdefault('auth', {})['token'] = os.environ.get('GATEWAY_TOKEN', '')
+
+# Anthropic API key
+config.setdefault('models', {}).setdefault('providers', {}).setdefault('anthropic', {})['apiKey'] = os.environ.get('ANTHROPIC_KEY', '')
+
+# Discord token
+config.setdefault('channels', {}).setdefault('discord', {})['token'] = os.environ.get('DISCORD_TOKEN', '')
 
 # Bedrock base URL (region-specific)
 region = os.environ.get('REGION', 'us-east-2')
@@ -264,16 +272,6 @@ with open('/home/ubuntu/.openclaw/openclaw.json', 'w') as f:
 print('openclaw.json configured successfully.')
 PYEOF
 
-# Create .env file with secrets for SecretRef resolution
-cat > /home/ubuntu/.openclaw/.env << ENVEOF
-# OpenClaw secrets loaded from AWS SSM
-ANTHROPIC_API_KEY=${ANTHROPIC_KEY}
-DISCORD_BOT_TOKEN=${DISCORD_TOKEN}
-OPENCLAW_GATEWAY_TOKEN=${GATEWAY_TOKEN}
-ENVEOF
-
-chmod 600 /home/ubuntu/.openclaw/.env
-chown ubuntu:ubuntu /home/ubuntu/.openclaw/.env
 chmod 600 /home/ubuntu/.openclaw/openclaw.json
 chown ubuntu:ubuntu /home/ubuntu/.openclaw/openclaw.json
 chmod 755 /home/ubuntu/.openclaw
