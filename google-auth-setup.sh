@@ -75,22 +75,6 @@ send_auth_message() {
     echo "Failed to generate auth URL for $ACCOUNT"
     return 1
   fi
-  
-  MESSAGE="🔐 **Google OAuth Setup Required: $ACCOUNT**
-
-$DESCRIPTION
-
-**Step 1:** Visit the URL below
-
-**Step 2:** After authorizing, copy the redirect URL from your browser.
-
-**Step 3:** Send me the redirect URL and I'll complete the setup.
-$AUTH_URL"
-  
-  export OPENCLAW_GATEWAY_TOKEN="$GATEWAY_TOKEN"
-  openclaw message send --channel discord --target user:364155628756926466 --message "$MESSAGE"
-  
-  echo "✅ Auth URL sent to Discord for $ACCOUNT"
   echo "Auth URL: $AUTH_URL"
 }
 
