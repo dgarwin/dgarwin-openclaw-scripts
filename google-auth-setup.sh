@@ -1,5 +1,8 @@
 #!/bin/bash
-# google-auth-setup.sh - One-time Google OAuth setup
+# google-auth-setup.sh - One-time Google OAuth 
+
+REGION="${AWS_REGION:-us-east-2}"
+
 
 # Check if already authenticated
 ALREADY_AUTHED=0
