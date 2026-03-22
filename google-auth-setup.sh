@@ -34,6 +34,18 @@ if [ -z "$GATEWAY_TOKEN" ]; then
   exit 1
 fi
 
+export GOG_KEYRING_PASSWORD=$(aws ssm get-parameter \
+  --name "/openclaw/google-keyring" \
+  --with-decryption \
+  --region "$REGION" \
+  --query 'Parameter.Value' \
+  --output text)
+
+if [ -z "$GOG_KEYRING_PASSWORD" ]; then
+  echo "ERROR: No google keyring pw found"
+  exit 1
+fi
+
 # Function to send auth message for an account
 send_auth_message() {
   local ACCOUNT=$1
