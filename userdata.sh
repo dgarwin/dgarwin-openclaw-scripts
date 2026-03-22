@@ -107,7 +107,6 @@ echo "[3/9] Syncing OpenClaw repository..."
 # Configure git user for commits
 sudo -u ubuntu git config --global user.name "David Garwin"
 sudo -u ubuntu git config --global user.email "dgarwin@gmail.com"
-fi
 
 # ---------------------------------------------------------------------------
 # 4. Install Go and gogcli for Google Drive access
