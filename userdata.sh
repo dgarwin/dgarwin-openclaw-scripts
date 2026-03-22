@@ -284,21 +284,19 @@ echo "[8/9] Loading workspace .md files from repo..."
 
 sudo -u ubuntu mkdir -p /home/ubuntu/.openclaw/workspace
 
-for md_file in AGENTS.md SOUL.md TOOLS.md IDENTITY.md USER.md HEARTBEAT.md BOOTSTRAP.md MEMORY.md; do
-  if [ -f "/opt/openclaw-repo/$md_file" ]; then
-    cp "/opt/openclaw-repo/$md_file" "/home/ubuntu/.openclaw/workspace/$md_file"
-    echo "  Copied $md_file"
-  fi
+for md_file in /opt/openclaw-repo/*.md; do
+  [ -f "$md_file" ] || continue
+  cp "$md_file" "/home/ubuntu/.openclaw/workspace/$(basename "$md_file")"
+  echo "  Copied $(basename "$md_file")"
 done
 
 chown -R ubuntu:ubuntu /home/ubuntu/.openclaw/workspace
 
 # Also copy to the path openclaw expects for template resolution
 sudo -u ubuntu mkdir -p /home/ubuntu/docs/reference/templates
-for md_file in AGENTS.md SOUL.md TOOLS.md IDENTITY.md USER.md HEARTBEAT.md BOOTSTRAP.md MEMORY.md; do
-  if [ -f "/opt/openclaw-repo/$md_file" ]; then
-    cp "/opt/openclaw-repo/$md_file" "/home/ubuntu/docs/reference/templates/$md_file"
-  fi
+for md_file in /opt/openclaw-repo/*.md; do
+  [ -f "$md_file" ] || continue
+  cp "$md_file" "/home/ubuntu/docs/reference/templates/$(basename "$md_file")"
 done
 chown -R ubuntu:ubuntu /home/ubuntu/docs
 

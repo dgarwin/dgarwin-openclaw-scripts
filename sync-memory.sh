@@ -1,5 +1,5 @@
 #!/bin/bash
-# sync-memory.sh - Sync workspace .md files and cron jobs to git repo
+# sync-memory.sh - Sync workspace .md files, cron jobs, and openclaw.json to git repo
 set -e
 
 WORKSPACE_DIR="/home/ubuntu/.openclaw/workspace"
@@ -19,6 +19,11 @@ if [ -f "$OPENCLAW_DIR/cron/jobs.json" ]; then
   cp "$OPENCLAW_DIR/cron/jobs.json" "$REPO_DIR/cron-jobs.json"
 fi
 
+# Copy openclaw.json (strip secrets before committing)
+if [ -f "$OPENCLAW_DIR/openclaw.json" ]; then
+  cp "$OPENCLAW_DIR/openclaw.json" "$REPO_DIR/openclaw.json"
+fi
+
 # Check if there are any changes
 if git diff --quiet && git diff --cached --quiet; then
   echo "No changes to commit"
@@ -26,7 +31,7 @@ if git diff --quiet && git diff --cached --quiet; then
 fi
 
 # Commit and push changes
-git add *.md cron-jobs.json memory/ 2>/dev/null || git add *.md cron-jobs.json
+git add *.md cron-jobs.json openclaw.json memory/ 2>/dev/null || git add *.md cron-jobs.json openclaw.json
 git commit -m "Auto-sync workspace memory files - $(date -u +%Y-%m-%d)"
 git push
 
@@ -43,10 +48,10 @@ if [ -z "$GATEWAY_TOKEN" ]; then
   exit 1
 fi
 
-MESSAGE="Successfully pushed MD files and cron to git!"
+MESSAGE="Successfully pushed MD files, cron, and openclaw.json to git!"
 
 export OPENCLAW_GATEWAY_TOKEN="$GATEWAY_TOKEN"
 openclaw message send --channel discord --target user:364155628756926466 --message "$MESSAGE"
 
 
-echo "MD files and cron jobs synced to GitHub"
+echo "MD files, cron jobs, and openclaw.json synced to GitHub"
