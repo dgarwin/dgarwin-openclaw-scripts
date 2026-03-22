@@ -259,6 +259,12 @@ echo "[8/9] Loading workspace .md files from repo..."
 
 sudo -u ubuntu mkdir -p /home/ubuntu/.openclaw/workspace
 
+for md_file in /opt/openclaw-repo/memory/*.md; do
+  [ -f "$md_file" ] || continue
+  cp "$md_file" "/home/ubuntu/.openclaw/workspace/memory/$(basename "$md_file")"
+  echo "  Copied $(basename "$md_file")"
+done
+
 for md_file in /opt/openclaw-repo/*.md; do
   [ -f "$md_file" ] || continue
   cp "$md_file" "/home/ubuntu/.openclaw/workspace/$(basename "$md_file")"
