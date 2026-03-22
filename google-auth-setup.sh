@@ -7,6 +7,14 @@ export NVM_DIR="$HOME/.nvm"
 
 REGION="${AWS_REGION:-us-east-2}"
 
+aws ssm get-parameter \
+    --name "/openclaw/google" \
+    --with-decryption \
+    --region "${REGION:-us-east-2}" \
+    --query 'Parameter.Value' \
+    --output text >> ~/.google_oauth
+gog auth credentials ~/.google_oauth
+
 # Check if already authenticated
 ALREADY_AUTHED=0
 if gog auth list 2>/dev/null | grep -q "garwinopenclaw@gmail.com"; then
