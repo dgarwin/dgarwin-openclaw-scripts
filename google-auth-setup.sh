@@ -7,6 +7,7 @@ export NVM_DIR="$HOME/.nvm"
 
 REGION="${AWS_REGION:-us-east-2}"
 
+rm ~/.google_oauth
 aws ssm get-parameter \
     --name "/openclaw/google" \
     --with-decryption \
