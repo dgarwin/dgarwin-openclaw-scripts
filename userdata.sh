@@ -210,6 +210,7 @@ npm install -g openclaw@latest --timeout=300000 || {
   npm cache clean --force
   npm install -g openclaw@latest --timeout=300000
 }
+ln -sfn "$(ls -d /home/ubuntu/.nvm/versions/node/v22.* 2>/dev/null | sort -V | tail -1 | xargs basename)" /home/ubuntu/.nvm/versions/node/v22
 UBUNTU_SCRIPT
 
 # ---------------------------------------------------------------------------
