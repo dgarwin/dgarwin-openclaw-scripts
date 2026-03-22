@@ -56,9 +56,9 @@ send_auth_message() {
   echo "Starting Google OAuth flow for $ACCOUNT..."
   
   if [ -n "$READONLY_FLAG" ]; then
-    AUTH_OUTPUT=$(timeout 5s bash -c "gog auth add $ACCOUNT --services $SERVICES --readonly --manual <<< \"\"" 2>&1 || true)
+    AUTH_OUTPUT=$(timeout 5s bash -c "gog auth add $ACCOUNT --services $SERVICES --readonly --manual --remote<<< \"\"" 2>&1 || true)
   else
-    AUTH_OUTPUT=$(timeout 5s bash -c "gog auth add $ACCOUNT --services $SERVICES --manual <<< \"\"" 2>&1 || true)
+    AUTH_OUTPUT=$(timeout 5s bash -c "gog auth add $ACCOUNT --services $SERVICES --manual --remote<<< \"\"" 2>&1 || true)
   fi
   
   AUTH_URL=$(echo "$AUTH_OUTPUT" | grep -oP 'https://accounts\.google\.com[^ ]+' | head -1)
