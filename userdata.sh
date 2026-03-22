@@ -145,27 +145,6 @@ if [ ! -f /usr/local/bin/gog ]; then
 fi
 
 # ---------------------------------------------------------------------------
-# Configure Google OAuth credentials from SSM
-# ---------------------------------------------------------------------------
-sudo -u ubuntu mkdir -p /home/ubuntu/.config/gogcli
-
-GOOGLE_OAUTH_JSON=$(aws ssm get-parameter \
-  --name "/openclaw/google" \
-  --with-decryption \
-  --region "$REGION" \
-  --query 'Parameter.Value' \
-  --output text 2>/dev/null || echo "")
-
-if [ -n "$GOOGLE_OAUTH_JSON" ]; then
-  gog auth credentials $GOOGLE_OAUTH_JSON
-  echo "  Google OAuth credentials configured from SSM."
-else
-  echo "  Warning: Google OAuth credentials not found in SSM (/openclaw/google). Skipping gogcli auth setup."
-fi
-
-echo "  Go and gogcli installed successfully."
-
-# ---------------------------------------------------------------------------
 # 5. Install Node.js via NVM (as ubuntu)
 # ---------------------------------------------------------------------------
 echo "[5/9] Installing Node.js..."
