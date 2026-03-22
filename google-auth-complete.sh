@@ -12,7 +12,6 @@ fi
 ACCOUNT="$1"
 REDIRECT_URL="$2"
 
-export GOG_KEYRING_PASSWORD="openclaw-google-auth"
 export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
 
