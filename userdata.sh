@@ -157,20 +157,7 @@ GOOGLE_OAUTH_JSON=$(aws ssm get-parameter \
   --output text 2>/dev/null || echo "")
 
 if [ -n "$GOOGLE_OAUTH_JSON" ]; then
-  # Extract client_id and client_secret from the JSON
-  echo "$GOOGLE_OAUTH_JSON" | python3 -c 'import json, sys; data = json.load(sys.stdin); creds = data.get("installed", data); print(json.dumps({"client_id": creds["client_id"], "client_secret": creds["client_secret"]}, indent=2))' > /home/ubuntu/.config/gogcli/credentials.json
-  
-  chmod 600 /home/ubuntu/.config/gogcli/credentials.json
-  chown -R ubuntu:ubuntu /home/ubuntu/.config/gogcli
-  
-  # Set keyring password in environment for ubuntu user
-  if ! grep -q "GOG_KEYRING_PASSWORD" /home/ubuntu/.bashrc; then
-    # Fetch the keyring password from SSM and add to .bashrc
-    KEYRING_PASS=$(aws ssm get-parameter --name "/openclaw/google-keyring" --with-decryption --region "$REGION" --query 'Parameter.Value' --output text)
-    # Add at the top of .bashrc before the interactive check
-    sed -i "5i\# Export environment variables before interactive check\nexport GOG_KEYRING_PASSWORD=\"$KEYRING_PASS\"\n" /home/ubuntu/.bashrc
-  fi
-  
+  gog auth credentials $GOOGLE_OAUTH_JSON
   echo "  Google OAuth credentials configured from SSM."
 else
   echo "  Warning: Google OAuth credentials not found in SSM (/openclaw/google). Skipping gogcli auth setup."
