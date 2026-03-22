@@ -240,20 +240,19 @@ if [ -s "$NVM_DIR/nvm.sh" ]; then
   fi
 fi
 
+# Write secrets to environment file for systemd service
+cat > /etc/openclaw.env << ENVEOF
+ANTHROPIC_KEY=$ANTHROPIC_KEY
+DISCORD_TOKEN=$DISCORD_TOKEN
+GATEWAY_TOKEN=$GATEWAY_TOKEN
+ENVEOF
+chmod 600 /etc/openclaw.env
+
 python3 << PYEOF
 import json, os
 
 with open('/home/ubuntu/.openclaw/openclaw.json', 'r') as f:
     config = json.load(f)
-
-# Gateway token
-config.setdefault('gateway', {}).setdefault('auth', {})['token'] = os.environ.get('GATEWAY_TOKEN', '')
-
-# Anthropic API key
-config.setdefault('models', {}).setdefault('providers', {}).setdefault('anthropic', {})['apiKey'] = os.environ.get('ANTHROPIC_KEY', '')
-
-# Discord token
-config.setdefault('channels', {}).setdefault('discord', {})['token'] = os.environ.get('DISCORD_TOKEN', '')
 
 # Bedrock base URL (region-specific)
 region = os.environ.get('REGION', 'us-east-2')
@@ -322,6 +321,7 @@ After=network.target
 Type=simple
 User=ubuntu
 Environment=HOME=/home/ubuntu
+EnvironmentFile=/etc/openclaw.env
 WorkingDirectory=/home/ubuntu
 ExecStart=/bin/bash -c 'source /home/ubuntu/.nvm/nvm.sh && exec openclaw gateway'
 Restart=always
