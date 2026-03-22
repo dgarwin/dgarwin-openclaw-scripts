@@ -313,6 +313,10 @@ systemctl start openclaw
 
 # 10. Write access instructions
 # ---------------------------------------------------------------------------
+
+echo "[9.75/10] Misc"
+timedatectl set-timezone America/New_York
+
 echo "[10/10] Writing access instructions..."
 
 INSTANCE_ID=$(curl -s -H "X-aws-ec2-metadata-token: $(curl -s -X PUT http://169.254.169.254/latest/api/token -H 'X-aws-ec2-metadata-token-ttl-seconds: 60')" \
