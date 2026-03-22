@@ -2,7 +2,6 @@
 # google-auth-setup.sh - One-time Google OAuth setup via Discord
 # Runs 5 minutes after OpenClaw starts to initiate Google auth if needed
 
-export GOG_KEYRING_PASSWORD="openclaw-google-auth"
 export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
 
