@@ -144,6 +144,14 @@ if [ ! -f /usr/local/bin/gog ]; then
   rm -rf /tmp/gogcli
 fi
 
+aws ssm get-parameter \
+    --name "/openclaw/google" \
+    --with-decryption \
+    --region "${REGION:-us-east-2}" \
+    --query 'Parameter.Value' \
+    --output text >> ~/.google_oauth
+gog auth credentials ~/.google_oauth
+
 # ---------------------------------------------------------------------------
 # 5. Install Node.js via NVM (as ubuntu)
 # ---------------------------------------------------------------------------
@@ -302,51 +310,6 @@ SVCEOF
 systemctl daemon-reload
 systemctl enable openclaw
 systemctl start openclaw
-
-# ---------------------------------------------------------------------------
-# ---------------------------------------------------------------------------
-# 9.5. Install Google OAuth setup timer (runs 5min after boot)
-# ---------------------------------------------------------------------------
-echo "[9.5/10] Installing Google OAuth setup timer..."
-
-cat > /etc/systemd/system/google-auth-setup.service << GOOGLEEOF
-[Unit]
-Description=Google OAuth Setup Check
-After=openclaw.service
-Requires=openclaw.service
-
-[Service]
-Type=oneshot
-User=ubuntu
-Environment=HOME=/home/ubuntu
-Environment=GOG_KEYRING_PASSWORD=${GOG_KEYRING_PASSWORD}
-WorkingDirectory=/home/ubuntu
-ExecStart=/bin/bash /opt/openclaw-scripts/google-auth-setup.sh
-StandardOutput=journal
-StandardError=journal
-
-[Install]
-WantedBy=multi-user.target
-GOOGLEEOF
-
-cat > /etc/systemd/system/google-auth-setup.timer << 'TIMEREOF'
-[Unit]
-Description=Google OAuth Setup Check Timer
-Requires=openclaw.service
-
-[Timer]
-OnBootSec=5min
-Unit=google-auth-setup.service
-
-[Install]
-WantedBy=timers.target
-TIMEREOF
-
-systemctl daemon-reload
-systemctl enable google-auth-setup.timer
-systemctl start google-auth-setup.timer
-
-echo "  Google OAuth setup timer installed, enabled, and started"
 
 # 10. Write access instructions
 # ---------------------------------------------------------------------------
